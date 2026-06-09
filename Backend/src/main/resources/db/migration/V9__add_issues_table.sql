@@ -8,5 +8,5 @@ CREATE TABLE issues (
                         status VARCHAR(255) NOT NULL,
                         title VARCHAR(255) NOT NULL,
                         CONSTRAINT fk_issues_author FOREIGN KEY (author_id) REFERENCES users(id),
-                        CONSTRAINT fk_issues_repo FOREIGN KEY (repository_id) REFERENCES repositories(id)
+                        CONSTRAINT fk_issues_codebase FOREIGN KEY (repository_id) REFERENCES codebases(id)
 );

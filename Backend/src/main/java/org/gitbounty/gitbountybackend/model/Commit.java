@@ -34,7 +34,7 @@ public class Commit {
     private String authorEmail;
 
     @Lob // Maps to a LONGTEXT/CLOB type in the DB to support massive multi-line Git messages
-    @Column(name = "message", nullable = false, columnDefinition = "LONGTEXT")
+    @Column(name = "message", nullable = false)
     private String message;
 
     @Column(name = "committed_at", nullable = false, updatable = false)

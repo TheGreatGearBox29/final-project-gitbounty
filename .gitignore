@@ -26,3 +26,7 @@ replay_pid*
 .idea/
 
 repositories/
+
+# macOS
+.DS_Store
+**/.DS_Store
