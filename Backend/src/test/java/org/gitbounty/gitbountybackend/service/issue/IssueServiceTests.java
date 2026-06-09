@@ -15,6 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.security.Principal;
 import java.util.Optional;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -263,5 +265,50 @@ class IssueServiceTests {
 
         assertEquals(401, exception.getStatusCode().value());
         verifyNoInteractions(userService, codebaseService, issueRepository);
+    }
+
+    @Test
+    void listIssuesShouldReturnIssuesForRepository() {
+        Codebase codebase = codebase("gitbounty-core");
+
+        Issue firstIssue = new Issue();
+        firstIssue.setId(1L);
+        firstIssue.setTitle("Fix login bug");
+        firstIssue.setDescription("Login fails with token");
+        firstIssue.setRepository(codebase);
+
+        Issue secondIssue = new Issue();
+        secondIssue.setId(2L);
+        secondIssue.setTitle("Fix sidebar bug");
+        secondIssue.setDescription("Sidebar overlaps content");
+        secondIssue.setRepository(codebase);
+
+        when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findByRepositoryName("gitbounty-core"))
+                .thenReturn(List.of(firstIssue, secondIssue));
+
+        List<Issue> issues = issueService.listIssues("gitbounty-core");
+
+        assertEquals(2, issues.size());
+        assertEquals("Fix login bug", issues.get(0).getTitle());
+        assertEquals("Fix sidebar bug", issues.get(1).getTitle());
+
+        verify(codebaseService).getCodebase("gitbounty-core");
+        verify(issueRepository).findByRepositoryName("gitbounty-core");
+    }
+
+    @Test
+    void listIssuesShouldNotQueryIssuesWhenCodebaseDoesNotExist() {
+        when(codebaseService.getCodebase("missing-codebase"))
+                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Repository not found"));
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> issueService.listIssues("missing-codebase")
+        );
+
+        assertEquals(404, exception.getStatusCode().value());
+        verify(codebaseService).getCodebase("missing-codebase");
+        verifyNoInteractions(issueRepository);
     }
 }
