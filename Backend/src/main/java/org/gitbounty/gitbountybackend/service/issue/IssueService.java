@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 public class IssueService {
 
@@ -61,5 +63,10 @@ public class IssueService {
 
     private String normalizeDescription(String description) {
         return description == null ? null : description.trim();
+    }
+
+    public List<Issue> listIssues(String repositoryName) {
+        codebaseService.getCodebase(repositoryName);
+        return issueRepository.findByRepositoryName(repositoryName);
     }
 }

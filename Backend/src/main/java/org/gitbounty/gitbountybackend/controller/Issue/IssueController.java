@@ -8,6 +8,8 @@ import org.gitbounty.gitbountybackend.service.issue.IssueService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/codebases/{repositoryName}/issues")
 public class IssueController {
@@ -34,5 +36,17 @@ public class IssueController {
         return ResponseEntity
                 .created(URI.create("/api/codebases/" + repositoryName + "/issues/" + issue.getId()))
                 .body(IssueResponse.from(issue));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<IssueResponse>> listIssues(
+            @PathVariable String repositoryName
+    ) {
+        List<IssueResponse> issues = issueService.listIssues(repositoryName)
+                .stream()
+                .map(IssueResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(issues);
     }
 }
