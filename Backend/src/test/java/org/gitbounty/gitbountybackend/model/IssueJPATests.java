@@ -48,6 +48,7 @@ public class IssueJPATests {
         issue.setDescription("The sidebar overlaps the dashboard main menu container.");
         issue.setAuthor(author);
         issue.setRepository(repo);
+        issue.setNumber(1);
         return issue;
     }
 
@@ -224,5 +225,19 @@ public class IssueJPATests {
 
         issue.setStatus("IN_PROGRESS");
         assertEquals("IN_PROGRESS", issue.getStatus(), "getStatus did not return the manually set status");
+    }
+
+    @Test
+    void shouldSetAndGetIssueNumber() {
+        Issue issue = new Issue();
+
+        issue.setNumber(1);
+        assertEquals(1, issue.getNumber());
+
+        issue.setNumber(2);
+        assertEquals(2, issue.getNumber());
+
+        issue.setNumber(57);
+        assertEquals(57, issue.getNumber());
     }
 }

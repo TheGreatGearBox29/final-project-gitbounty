@@ -12,6 +12,9 @@ public class Issue {
     private Long id;
 
     @Column(nullable = false)
+    private Integer number;
+
+    @Column(nullable = false)
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -39,6 +42,9 @@ public class Issue {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Integer getNumber() { return number; }
+    public void setNumber(Integer number) { this.number = number; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

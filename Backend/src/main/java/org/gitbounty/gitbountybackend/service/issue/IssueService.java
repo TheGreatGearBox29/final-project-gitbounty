@@ -35,7 +35,14 @@ public class IssueService {
         User author = resolveAuthor(principal);
         Codebase codebase = codebaseService.getCodebase(repositoryName);
 
+        // added this to get the number of the next issue in the current repository
+        // (number of already existing issues) + 1
+        Integer nextNumber = issueRepository.findMaxNumberByRepositoryId(codebase.getId())
+                .map(maxNumber -> maxNumber + 1)
+                .orElse(1);
+
         Issue issue = new Issue();
+        issue.setNumber(nextNumber);
         issue.setTitle(normalizedTitle);
         issue.setDescription(normalizeDescription(description));
         issue.setAuthor(author);
