@@ -23,7 +23,7 @@ public record PullRequestResponse(
             pr.getDescription(),
             pr.getSourceBranch().getName(),
             pr.getTargetBranch().getName(),
-            pr.getStatus(),
+            pr.getStatus().name(),
             pr.getAuthor().getUsername(),
             pr.getCreatedAt()
         );
