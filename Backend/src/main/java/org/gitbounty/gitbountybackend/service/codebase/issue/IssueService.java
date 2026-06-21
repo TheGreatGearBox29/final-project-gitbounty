@@ -79,4 +79,15 @@ public class IssueService {
         codebaseService.getCodebase(repositoryName);
         return issueRepository.findByRepositoryName(repositoryName);
     }
+
+    @Transactional(readOnly = true)
+    public Issue getIssue(String repositoryName, Integer issueNumber) {
+        codebaseService.getCodebase(repositoryName);
+
+        return issueRepository.findByRepositoryNameAndNumber(repositoryName, issueNumber)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Issue not found: #" + issueNumber
+                ));
+    }
 }

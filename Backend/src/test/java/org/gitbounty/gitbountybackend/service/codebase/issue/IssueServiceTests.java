@@ -22,6 +22,9 @@ import java.util.Optional;
 
 import java.util.List;
 
+import java.util.Optional;
+import org.springframework.http.HttpStatus;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -315,5 +318,50 @@ class IssueServiceTests {
         assertEquals(404, exception.getStatusCode().value());
         verify(codebaseService).getCodebase("missing-codebase");
         verifyNoInteractions(issueRepository);
+    }
+
+    @Test
+    void getIssueShouldReturnIssueByRepositoryNameAndNumber() {
+        User author = user("tester");
+        Codebase codebase = codebase("gitbounty-core");
+
+        Issue issue = new Issue();
+        issue.setId(1L);
+        issue.setNumber(7);
+        issue.setTitle("Fix login bug");
+        issue.setDescription("Login fails with token");
+        issue.setAuthor(author);
+        issue.setRepository(codebase);
+
+        when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findByRepositoryNameAndNumber("gitbounty-core", 7))
+                .thenReturn(Optional.of(issue));
+
+        Issue result = issueService.getIssue("gitbounty-core", 7);
+
+        assertEquals(7, result.getNumber());
+        assertEquals("Fix login bug", result.getTitle());
+        assertEquals(codebase, result.getRepository());
+
+        verify(codebaseService).getCodebase("gitbounty-core");
+        verify(issueRepository).findByRepositoryNameAndNumber("gitbounty-core", 7);
+    }
+
+    @Test
+    void getIssueShouldThrowNotFoundWhenIssueDoesNotExist() {
+        Codebase codebase = codebase("gitbounty-core");
+
+        when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findByRepositoryNameAndNumber("gitbounty-core", 99))
+                .thenReturn(Optional.empty());
+
+        ResponseStatusException exception = assertThrows(
+                ResponseStatusException.class,
+                () -> issueService.getIssue("gitbounty-core", 99)
+        );
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        verify(codebaseService).getCodebase("gitbounty-core");
+        verify(issueRepository).findByRepositoryNameAndNumber("gitbounty-core", 99);
     }
 }
