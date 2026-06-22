@@ -49,4 +49,14 @@ public class IssueController {
 
         return ResponseEntity.ok(issues);
     }
+
+    @GetMapping("/{issueNumber}")
+    public ResponseEntity<IssueResponse> getIssue(
+            @PathVariable String repositoryName,
+            @PathVariable Integer issueNumber
+    ) {
+        Issue issue = issueService.getIssue(repositoryName, issueNumber);
+
+        return ResponseEntity.ok(IssueResponse.from(issue));
+    }
 }
