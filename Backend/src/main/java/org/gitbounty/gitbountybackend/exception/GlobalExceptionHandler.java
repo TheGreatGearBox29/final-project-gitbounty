@@ -26,7 +26,8 @@ public class GlobalExceptionHandler {
             UserNotFoundException.class,
             BranchNotFoundException.class,
             CodebaseNotFoundException.class,
-            CodebaseMemberNotFoundException.class
+            CodebaseMemberNotFoundException.class,
+            IssueNotFoundException.class
     })
     public ResponseEntity<Object> handleNotFoundExceptions(RuntimeException ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
@@ -58,6 +59,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGeneralException(Exception ex) {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    // --- 401 AuthenticationRequiredException handler ---
+    @ExceptionHandler(AuthenticationRequiredException.class)
+    public ResponseEntity<Object> handleAuthenticationRequiredException(AuthenticationRequiredException ex) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     // Standardized error JSON builder

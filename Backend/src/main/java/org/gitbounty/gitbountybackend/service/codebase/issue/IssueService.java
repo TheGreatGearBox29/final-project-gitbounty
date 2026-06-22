@@ -7,10 +7,13 @@ import org.gitbounty.gitbountybackend.model.Issue;
 import org.gitbounty.gitbountybackend.model.User;
 import org.gitbounty.gitbountybackend.service.User.UserService;
 import org.gitbounty.gitbountybackend.service.codebase.CodebaseService;
-import org.springframework.http.HttpStatus;
+//import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+//import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.gitbounty.gitbountybackend.exception.AuthenticationRequiredException;
+import org.gitbounty.gitbountybackend.exception.IssueNotFoundException;
 
 import java.util.List;
 
@@ -55,16 +58,16 @@ public class IssueService {
 
     private User resolveAuthor(Principal principal) {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+            throw new AuthenticationRequiredException("Authentication is required");
         }
 
         return userService.findByUsername(principal.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found"));
+                .orElseThrow(() -> new AuthenticationRequiredException("Authenticated user not found"));
     }
 
     private String normalizeTitle(String title) {
         if (title == null || title.trim().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Issue title is required");
+            throw new IllegalArgumentException("Issue title is required");
         }
 
         return title.trim();
@@ -85,9 +88,6 @@ public class IssueService {
         codebaseService.getCodebase(repositoryName);
 
         return issueRepository.findByRepositoryNameAndNumber(repositoryName, issueNumber)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Issue not found: #" + issueNumber
-                ));
+                .orElseThrow(() -> new IssueNotFoundException("Issue not found: #" + issueNumber));
     }
 }

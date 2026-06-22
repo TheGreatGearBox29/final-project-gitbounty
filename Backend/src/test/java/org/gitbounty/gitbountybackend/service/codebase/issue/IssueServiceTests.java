@@ -1,29 +1,23 @@
 package org.gitbounty.gitbountybackend.service.codebase.issue;
 
+import org.gitbounty.gitbountybackend.exception.AuthenticationRequiredException;
+import org.gitbounty.gitbountybackend.exception.CodebaseNotFoundException;
+import org.gitbounty.gitbountybackend.exception.IssueNotFoundException;
 import org.gitbounty.gitbountybackend.model.Codebase;
 import org.gitbounty.gitbountybackend.model.Issue;
 import org.gitbounty.gitbountybackend.model.IssueStatus;
 import org.gitbounty.gitbountybackend.model.User;
 import org.gitbounty.gitbountybackend.service.User.UserService;
 import org.gitbounty.gitbountybackend.service.codebase.CodebaseService;
-
-import org.gitbounty.gitbountybackend.service.codebase.issue.IssueRepository;
-import org.gitbounty.gitbountybackend.service.codebase.issue.IssueService;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
-import java.util.Optional;
-
 import java.util.List;
-
 import java.util.Optional;
-import org.springframework.http.HttpStatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -71,6 +65,7 @@ class IssueServiceTests {
 
         when(userService.findByUsername("tester")).thenReturn(Optional.of(author));
         when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findMaxNumberByRepositoryId(10L)).thenReturn(Optional.empty());
         when(issueRepository.saveAndFlush(any(Issue.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Issue createdIssue = issueService.createIssue(
@@ -80,6 +75,7 @@ class IssueServiceTests {
                 principal("tester")
         );
 
+        assertEquals(1, createdIssue.getNumber());
         assertEquals("Fix login bug", createdIssue.getTitle());
         assertEquals("Login fails with token", createdIssue.getDescription());
         assertEquals(IssueStatus.OPEN, createdIssue.getStatus());
@@ -88,6 +84,30 @@ class IssueServiceTests {
 
         verify(userService).findByUsername("tester");
         verify(codebaseService).getCodebase("gitbounty-core");
+        verify(issueRepository).findMaxNumberByRepositoryId(10L);
+        verify(issueRepository).saveAndFlush(any(Issue.class));
+    }
+
+    @Test
+    void createIssueShouldAssignNextIssueNumber() {
+        User author = user("tester");
+        Codebase codebase = codebase("gitbounty-core");
+
+        when(userService.findByUsername("tester")).thenReturn(Optional.of(author));
+        when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findMaxNumberByRepositoryId(10L)).thenReturn(Optional.of(6));
+        when(issueRepository.saveAndFlush(any(Issue.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Issue createdIssue = issueService.createIssue(
+                "gitbounty-core",
+                "Fix login bug",
+                "Login fails with token",
+                principal("tester")
+        );
+
+        assertEquals(7, createdIssue.getNumber());
+
+        verify(issueRepository).findMaxNumberByRepositoryId(10L);
         verify(issueRepository).saveAndFlush(any(Issue.class));
     }
 
@@ -98,6 +118,7 @@ class IssueServiceTests {
 
         when(userService.findByUsername("tester")).thenReturn(Optional.of(author));
         when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findMaxNumberByRepositoryId(10L)).thenReturn(Optional.empty());
         when(issueRepository.saveAndFlush(any(Issue.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Issue createdIssue = issueService.createIssue(
@@ -118,6 +139,7 @@ class IssueServiceTests {
 
         when(userService.findByUsername("tester")).thenReturn(Optional.of(author));
         when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findMaxNumberByRepositoryId(10L)).thenReturn(Optional.empty());
         when(issueRepository.saveAndFlush(any(Issue.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Issue createdIssue = issueService.createIssue(
@@ -133,8 +155,8 @@ class IssueServiceTests {
 
     @Test
     void createIssueShouldRejectNullTitle() {
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
                 () -> issueService.createIssue(
                         "gitbounty-core",
                         null,
@@ -143,14 +165,14 @@ class IssueServiceTests {
                 )
         );
 
-        assertEquals(400, exception.getStatusCode().value());
+        assertEquals("Issue title is required", exception.getMessage());
         verifyNoInteractions(userService, codebaseService, issueRepository);
     }
 
     @Test
     void createIssueShouldRejectBlankTitle() {
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
                 () -> issueService.createIssue(
                         "gitbounty-core",
                         "     ",
@@ -159,14 +181,14 @@ class IssueServiceTests {
                 )
         );
 
-        assertEquals(400, exception.getStatusCode().value());
+        assertEquals("Issue title is required", exception.getMessage());
         verifyNoInteractions(userService, codebaseService, issueRepository);
     }
 
     @Test
     void createIssueShouldRejectNullPrincipal() {
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        AuthenticationRequiredException exception = assertThrows(
+                AuthenticationRequiredException.class,
                 () -> issueService.createIssue(
                         "gitbounty-core",
                         "Fix login bug",
@@ -175,14 +197,14 @@ class IssueServiceTests {
                 )
         );
 
-        assertEquals(401, exception.getStatusCode().value());
+        assertEquals("Authentication is required", exception.getMessage());
         verifyNoInteractions(userService, codebaseService, issueRepository);
     }
 
     @Test
     void createIssueShouldRejectBlankPrincipalName() {
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        AuthenticationRequiredException exception = assertThrows(
+                AuthenticationRequiredException.class,
                 () -> issueService.createIssue(
                         "gitbounty-core",
                         "Fix login bug",
@@ -191,7 +213,25 @@ class IssueServiceTests {
                 )
         );
 
-        assertEquals(401, exception.getStatusCode().value());
+        assertEquals("Authentication is required", exception.getMessage());
+        verifyNoInteractions(userService, codebaseService, issueRepository);
+    }
+
+    @Test
+    void createIssueShouldRejectNullPrincipalName() {
+        Principal principalWithNullName = () -> null;
+
+        AuthenticationRequiredException exception = assertThrows(
+                AuthenticationRequiredException.class,
+                () -> issueService.createIssue(
+                        "gitbounty-core",
+                        "Fix login bug",
+                        "Description",
+                        principalWithNullName
+                )
+        );
+
+        assertEquals("Authentication is required", exception.getMessage());
         verifyNoInteractions(userService, codebaseService, issueRepository);
     }
 
@@ -199,8 +239,8 @@ class IssueServiceTests {
     void createIssueShouldRejectWhenAuthenticatedUserIsNotFound() {
         when(userService.findByUsername("missing-user")).thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        AuthenticationRequiredException exception = assertThrows(
+                AuthenticationRequiredException.class,
                 () -> issueService.createIssue(
                         "gitbounty-core",
                         "Fix login bug",
@@ -209,7 +249,7 @@ class IssueServiceTests {
                 )
         );
 
-        assertEquals(401, exception.getStatusCode().value());
+        assertEquals("Authenticated user not found", exception.getMessage());
         verify(userService).findByUsername("missing-user");
         verifyNoInteractions(codebaseService, issueRepository);
     }
@@ -221,6 +261,7 @@ class IssueServiceTests {
 
         when(userService.findByUsername("tester")).thenReturn(Optional.of(author));
         when(codebaseService.getCodebase("gitbounty-core")).thenReturn(codebase);
+        when(issueRepository.findMaxNumberByRepositoryId(10L)).thenReturn(Optional.empty());
         when(issueRepository.saveAndFlush(any(Issue.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         issueService.createIssue(
@@ -239,10 +280,10 @@ class IssueServiceTests {
 
         when(userService.findByUsername("tester")).thenReturn(Optional.of(author));
         when(codebaseService.getCodebase("missing-codebase"))
-                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Repository not found"));
+                .thenThrow(new CodebaseNotFoundException("Repository not found"));
 
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        CodebaseNotFoundException exception = assertThrows(
+                CodebaseNotFoundException.class,
                 () -> issueService.createIssue(
                         "missing-codebase",
                         "Fix login bug",
@@ -251,28 +292,10 @@ class IssueServiceTests {
                 )
         );
 
-        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Repository not found", exception.getMessage());
         verify(userService).findByUsername("tester");
         verify(codebaseService).getCodebase("missing-codebase");
-        verifyNoInteractions(issueRepository);
-    }
-
-    @Test
-    void createIssueShouldRejectNullPrincipalName() {
-        Principal principalWithNullName = () -> null;
-
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
-                () -> issueService.createIssue(
-                        "gitbounty-core",
-                        "Fix login bug",
-                        "Description",
-                        principalWithNullName
-                )
-        );
-
-        assertEquals(401, exception.getStatusCode().value());
-        verifyNoInteractions(userService, codebaseService, issueRepository);
+        verify(issueRepository, never()).saveAndFlush(any(Issue.class));
     }
 
     @Test
@@ -308,14 +331,14 @@ class IssueServiceTests {
     @Test
     void listIssuesShouldNotQueryIssuesWhenCodebaseDoesNotExist() {
         when(codebaseService.getCodebase("missing-codebase"))
-                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Repository not found"));
+                .thenThrow(new CodebaseNotFoundException("Repository not found"));
 
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        CodebaseNotFoundException exception = assertThrows(
+                CodebaseNotFoundException.class,
                 () -> issueService.listIssues("missing-codebase")
         );
 
-        assertEquals(404, exception.getStatusCode().value());
+        assertEquals("Repository not found", exception.getMessage());
         verify(codebaseService).getCodebase("missing-codebase");
         verifyNoInteractions(issueRepository);
     }
@@ -355,12 +378,12 @@ class IssueServiceTests {
         when(issueRepository.findByRepositoryNameAndNumber("gitbounty-core", 99))
                 .thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        IssueNotFoundException exception = assertThrows(
+                IssueNotFoundException.class,
                 () -> issueService.getIssue("gitbounty-core", 99)
         );
 
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        assertEquals("Issue not found: #99", exception.getMessage());
         verify(codebaseService).getCodebase("gitbounty-core");
         verify(issueRepository).findByRepositoryNameAndNumber("gitbounty-core", 99);
     }
