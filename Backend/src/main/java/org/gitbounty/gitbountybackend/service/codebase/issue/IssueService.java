@@ -14,7 +14,6 @@ import org.gitbounty.gitbountybackend.service.codebase.CodebaseService;
 import org.springframework.stereotype.Service;
 //import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
-
 import org.gitbounty.gitbountybackend.exception.IssueNotFoundException;
 
 import java.util.List;
