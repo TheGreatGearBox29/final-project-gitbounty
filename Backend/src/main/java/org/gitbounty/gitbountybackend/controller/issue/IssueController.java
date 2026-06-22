@@ -64,4 +64,19 @@ public class IssueController {
 
         return ResponseEntity.ok(IssueResponse.from(issue));
     }
+
+    @PatchMapping("/{issueNumber}/state")
+    public ResponseEntity<IssueResponse> updateIssueState(
+            @PathVariable String repositoryName,
+            @PathVariable Integer issueNumber,
+            @RequestBody UpdateIssueStateRequest request
+    ) {
+        Issue issue = issueService.updateIssueState(
+                repositoryName,
+                issueNumber,
+                request.status()
+        );
+
+        return ResponseEntity.ok(IssueResponse.from(issue));
+    }
 }
