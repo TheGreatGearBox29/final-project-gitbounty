@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 //import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.gitbounty.gitbountybackend.exception.AuthenticationRequiredException;
 import org.gitbounty.gitbountybackend.exception.IssueNotFoundException;
 
 import java.util.List;
@@ -57,12 +56,8 @@ public class IssueService {
     }
 
     private User resolveAuthor(Principal principal) {
-        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
-            throw new AuthenticationRequiredException("Authentication is required");
-        }
-
         return userService.findByUsername(principal.getName())
-                .orElseThrow(() -> new AuthenticationRequiredException("Authenticated user not found"));
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
     }
 
     private String normalizeTitle(String title) {

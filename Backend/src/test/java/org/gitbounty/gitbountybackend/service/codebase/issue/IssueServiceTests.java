@@ -1,6 +1,5 @@
 package org.gitbounty.gitbountybackend.service.codebase.issue;
 
-import org.gitbounty.gitbountybackend.exception.AuthenticationRequiredException;
 import org.gitbounty.gitbountybackend.exception.CodebaseNotFoundException;
 import org.gitbounty.gitbountybackend.exception.IssueNotFoundException;
 import org.gitbounty.gitbountybackend.model.Codebase;
@@ -186,61 +185,11 @@ class IssueServiceTests {
     }
 
     @Test
-    void createIssueShouldRejectNullPrincipal() {
-        AuthenticationRequiredException exception = assertThrows(
-                AuthenticationRequiredException.class,
-                () -> issueService.createIssue(
-                        "gitbounty-core",
-                        "Fix login bug",
-                        "Description",
-                        null
-                )
-        );
-
-        assertEquals("Authentication is required", exception.getMessage());
-        verifyNoInteractions(userService, codebaseService, issueRepository);
-    }
-
-    @Test
-    void createIssueShouldRejectBlankPrincipalName() {
-        AuthenticationRequiredException exception = assertThrows(
-                AuthenticationRequiredException.class,
-                () -> issueService.createIssue(
-                        "gitbounty-core",
-                        "Fix login bug",
-                        "Description",
-                        principal("   ")
-                )
-        );
-
-        assertEquals("Authentication is required", exception.getMessage());
-        verifyNoInteractions(userService, codebaseService, issueRepository);
-    }
-
-    @Test
-    void createIssueShouldRejectNullPrincipalName() {
-        Principal principalWithNullName = () -> null;
-
-        AuthenticationRequiredException exception = assertThrows(
-                AuthenticationRequiredException.class,
-                () -> issueService.createIssue(
-                        "gitbounty-core",
-                        "Fix login bug",
-                        "Description",
-                        principalWithNullName
-                )
-        );
-
-        assertEquals("Authentication is required", exception.getMessage());
-        verifyNoInteractions(userService, codebaseService, issueRepository);
-    }
-
-    @Test
     void createIssueShouldRejectWhenAuthenticatedUserIsNotFound() {
         when(userService.findByUsername("missing-user")).thenReturn(Optional.empty());
 
-        AuthenticationRequiredException exception = assertThrows(
-                AuthenticationRequiredException.class,
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
                 () -> issueService.createIssue(
                         "gitbounty-core",
                         "Fix login bug",

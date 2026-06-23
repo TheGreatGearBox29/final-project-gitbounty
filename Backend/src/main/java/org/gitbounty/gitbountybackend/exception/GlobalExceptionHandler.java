@@ -61,12 +61,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
     }
 
-    // --- 401 AuthenticationRequiredException handler ---
-    @ExceptionHandler(AuthenticationRequiredException.class)
-    public ResponseEntity<Object> handleAuthenticationRequiredException(AuthenticationRequiredException ex) {
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
-    }
-
     // Standardized error JSON builder
     private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String message) {
         Map<String, Object> body = new HashMap<>();
