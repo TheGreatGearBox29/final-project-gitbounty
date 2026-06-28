@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.gitbounty.gitbountybackend.exception.UserNotFoundException;
 import org.gitbounty.gitbountybackend.exception.DuplicateUserException;
 import org.gitbounty.gitbountybackend.model.User;
 import org.junit.jupiter.api.Test;
@@ -260,11 +261,11 @@ class UserServiceTests {
     }
 
     @Test
-    void updateUserProfileThrowsIllegalArgumentWhenUserDoesNotExist() {
+    void updateUserProfileThrowsUserNotFoundWhenUserDoesNotExist() {
         when(userRepository.findById(Long.MAX_VALUE)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.updateUserProfile(Long.MAX_VALUE, randomUsername(), randomEmail()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("User not found");
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("User not found with id");
     }
 }
