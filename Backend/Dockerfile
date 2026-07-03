@@ -14,7 +14,7 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 mvn package -DskipTests -B
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar

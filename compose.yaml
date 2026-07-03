@@ -23,7 +23,7 @@ services:
     networks:
       - gitbounty-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8081/health" ]
+      test: [ "CMD-SHELL", "wget -q -O - http://localhost:8081/health > /dev/null 2>&1" ]
       interval: 5s
       timeout: 5s
       retries: 10
