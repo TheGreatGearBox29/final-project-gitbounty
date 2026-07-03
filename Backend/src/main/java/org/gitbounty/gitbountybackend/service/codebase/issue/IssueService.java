@@ -121,6 +121,11 @@ public class IssueService {
         }
 
         Issue issue = getIssue(repositoryName, issueNumber);
+
+        if (issue.getStatus() == IssueStatus.CLOSED) {
+            throw new IllegalArgumentException("Cannot assign a closed issue");
+        }
+
         User assignee = codebaseMemberService.getMemberUser(repositoryName, username.trim());
 
         issue.setAssignedTo(assignee);
