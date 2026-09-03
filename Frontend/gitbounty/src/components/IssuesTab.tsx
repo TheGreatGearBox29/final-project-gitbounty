@@ -16,7 +16,7 @@ import { CreateBountyModal } from './CreateBountyModal';
 import { CreateIssueModal } from './CreateIssueModal';
 
 import type { BountyAPI } from '../types/Bounty';
-import type { IssueAPI } from '../types/Issue';
+import type { IssueAPI, IssueStatus } from '../types/Issue';
 
 import '../styles/RepoTabs.css';
 
@@ -28,7 +28,7 @@ interface IssuesTabProps {
     membersRefreshKey?: number;
 }
 
-type Filter = 'open' | 'closed';
+type Filter = 'open' | 'in_progress' | 'closed';
 
 function OpenIcon() {
     return (
@@ -84,6 +84,9 @@ export default function IssuesTab({
                                   }: IssuesTabProps) {
     const [filter, setFilter] =
         useState<Filter>('open');
+
+    const [pendingIssueStatusId, setPendingIssueStatusId] =
+        useState<number | null>(null);
 
     const [issues, setIssues] =
         useState<IssueAPI[]>([]);
@@ -208,7 +211,11 @@ export default function IssuesTab({
     );
 
     const openIssues = sortedIssues.filter(
-        (issue) => !isClosed(issue)
+        (issue) => issue.status === 'OPEN'
+    );
+
+    const inProgressIssues = sortedIssues.filter(
+        (issue) => issue.status === 'IN_PROGRESS'
     );
 
     const closedIssues = sortedIssues.filter(
@@ -218,7 +225,9 @@ export default function IssuesTab({
     const shownIssues =
         filter === 'open'
             ? openIssues
-            : closedIssues;
+            : filter === 'in_progress'
+                ? inProgressIssues
+                : closedIssues;
 
     const handleIssueCreated = (
         createdIssue: IssueAPI
@@ -255,6 +264,67 @@ export default function IssuesTab({
         setSuccessMessage(
             `Created a ${createdBounty.amount.toLocaleString()} credit bounty for "${createdBounty.title}".`
         );
+    };
+
+    const handleUpdateIssueStatus = async (
+        issue: IssueAPI,
+        status: IssueStatus
+    ) => {
+        const actionText =
+            status === 'CLOSED'
+                ? 'close'
+                : status === 'IN_PROGRESS'
+                    ? 'mark as in progress'
+                    : 'reopen';
+
+        if (status === 'CLOSED') {
+            const confirmed = window.confirm(
+                `Close issue #${issue.number}?`
+            );
+
+            if (!confirmed) {
+                return;
+            }
+        }
+
+        setPendingIssueStatusId(issue.id);
+        setSuccessMessage(null);
+        setActionError(null);
+
+        try {
+            const updatedIssue =
+                await issueApi.updateIssueState(
+                    repoName,
+                    issue.number,
+                    status
+                );
+
+            setIssues((currentIssues) =>
+                currentIssues.map((currentIssue) =>
+                    currentIssue.id === updatedIssue.id
+                        ? updatedIssue
+                        : currentIssue
+                )
+            );
+
+            if (status === 'CLOSED') {
+                setFilter('closed');
+            } else if (status === 'IN_PROGRESS') {
+                setFilter('in_progress');
+            } else {
+                setFilter('open');
+            }
+
+            setSuccessMessage(
+                `Issue #${updatedIssue.number} was updated successfully.`
+            );
+        } catch {
+            setActionError(
+                `Failed to ${actionText} issue #${issue.number}.`
+            );
+        } finally {
+            setPendingIssueStatusId(null);
+        }
     };
 
     const handleCompleteBounty = async (
@@ -478,6 +548,21 @@ export default function IssuesTab({
                         <button
                             type="button"
                             className={`tab-panel-filter ${
+                                filter === 'in_progress'
+                                    ? 'active'
+                                    : ''
+                            }`}
+                            onClick={() => {
+                                setFilter('in_progress');
+                            }}
+                        >
+                            <OpenIcon />
+                            {inProgressIssues.length} In progress
+                        </button>
+
+                        <button
+                            type="button"
+                            className={`tab-panel-filter ${
                                 filter === 'closed'
                                     ? 'active'
                                     : ''
@@ -636,6 +721,90 @@ export default function IssuesTab({
                                     </div>
                                 </div>
 
+                                {canManageBounties && (
+                                    <div className="issue-status-actions">
+                                        {issue.status === 'OPEN' && (
+                                            <button
+                                                type="button"
+                                                className="issue-status-action-btn progress"
+                                                disabled={
+                                                    pendingIssueStatusId === issue.id
+                                                }
+                                                onClick={() => {
+                                                    void handleUpdateIssueStatus(
+                                                        issue,
+                                                        'IN_PROGRESS'
+                                                    );
+                                                }}
+                                            >
+                                                {pendingIssueStatusId === issue.id
+                                                    ? 'Updating...'
+                                                    : 'Mark in progress'}
+                                            </button>
+                                        )}
+
+                                        {issue.status === 'IN_PROGRESS' && (
+                                            <button
+                                                type="button"
+                                                className="issue-status-action-btn open"
+                                                disabled={
+                                                    pendingIssueStatusId === issue.id
+                                                }
+                                                onClick={() => {
+                                                    void handleUpdateIssueStatus(
+                                                        issue,
+                                                        'OPEN'
+                                                    );
+                                                }}
+                                            >
+                                                {pendingIssueStatusId === issue.id
+                                                    ? 'Updating...'
+                                                    : 'Mark open'}
+                                            </button>
+                                        )}
+
+                                        {!isClosed(issue) && (
+                                            <button
+                                                type="button"
+                                                className="issue-status-action-btn close"
+                                                disabled={
+                                                    pendingIssueStatusId === issue.id
+                                                }
+                                                onClick={() => {
+                                                    void handleUpdateIssueStatus(
+                                                        issue,
+                                                        'CLOSED'
+                                                    );
+                                                }}
+                                            >
+                                                {pendingIssueStatusId === issue.id
+                                                    ? 'Closing...'
+                                                    : 'Close issue'}
+                                            </button>
+                                        )}
+
+                                        {isClosed(issue) && (
+                                            <button
+                                                type="button"
+                                                className="issue-status-action-btn open"
+                                                disabled={
+                                                    pendingIssueStatusId === issue.id
+                                                }
+                                                onClick={() => {
+                                                    void handleUpdateIssueStatus(
+                                                        issue,
+                                                        'OPEN'
+                                                    );
+                                                }}
+                                            >
+                                                {pendingIssueStatusId === issue.id
+                                                    ? 'Reopening...'
+                                                    : 'Reopen issue'}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
                                 {(canAssignIssue || canAddBounty || canResolveBounty) && (
                                     <div className="issue-bounty-actions">
 
@@ -756,7 +925,7 @@ export default function IssuesTab({
 
                     {shownIssues.length === 0 && (
                         <li className="tab-empty">
-                            No {filter} issues.
+                            {filter === 'in_progress' ? 'No in progress issues.' : `No ${filter} issues.`}
                         </li>
                     )}
                 </ul>

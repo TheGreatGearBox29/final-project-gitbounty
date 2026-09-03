@@ -614,3 +614,79 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+.issue-status-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.issue-status-action-btn {
+    padding: 6px 12px;
+    border: 1px solid;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 18px;
+    cursor: pointer;
+    transition:
+        background 0.12s ease,
+        border-color 0.12s ease,
+        transform 0.12s ease,
+        opacity 0.12s ease;
+}
+
+.issue-status-action-btn.progress {
+    border-color: #bf8700;
+    background: #fff8c5;
+    color: #7d4e00;
+}
+
+.issue-status-action-btn.progress:hover:not(:disabled) {
+    background: #fae17d;
+    transform: translateY(-1px);
+}
+
+.issue-status-action-btn.open {
+    border-color: #0969da;
+    background: #ffffff;
+    color: #0969da;
+}
+
+.issue-status-action-btn.open:hover:not(:disabled) {
+    background: #ddf4ff;
+    transform: translateY(-1px);
+}
+
+.issue-status-action-btn.close {
+    border-color: #cf222e;
+    background: #ffffff;
+    color: #cf222e;
+}
+
+.issue-status-action-btn.close:hover:not(:disabled) {
+    background: #ffebe9;
+    transform: translateY(-1px);
+}
+
+.issue-status-action-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.issue-status-action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+    .issue-status-actions {
+        width: 100%;
+    }
+
+    .issue-status-action-btn {
+        flex: 1;
+    }
+}
